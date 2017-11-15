@@ -49,6 +49,7 @@
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
+#include "can.h"
 #include "i2c.h"
 #include "usb_device.h"
 #include "gpio.h"
@@ -103,6 +104,7 @@ int main(void)
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_I2C1_Init();
+	//  MX_CAN1_Init();
 
 	/* USER CODE BEGIN 2 */
 	mpu9250Init();

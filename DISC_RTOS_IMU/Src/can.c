@@ -1,7 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : main.h
-  * Description        : This file contains the common defines of the application
+  * File Name          : CAN.c
+  * Description        : This file provides code for the configuration
+  *                      of the CAN instances.
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -45,57 +46,108 @@
   *
   ******************************************************************************
   */
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_H
-#define __MAIN_H
-  /* Includes ------------------------------------------------------------------*/
 
-/* USER CODE BEGIN Includes */
-#include "stdio.h"
-#include <math.h>
-#include <string.h>
-#include "imu.h"
+/* Includes ------------------------------------------------------------------*/
+#include "can.h"
 
-/* USER CODE END Includes */
+#include "gpio.h"
 
-/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+#include "main.h"
+/* USER CODE END 0 */
 
-/* USER CODE BEGIN Private defines */
-#define A_RES 2.0/32768.0
-#define G_RES 250.0/32768.0
-#define M_RES 1.501831501
+CAN_HandleTypeDef hcan1;
 
-#define GYRO_SENS 130
-#define RAD_TO_DEG 180./M_PI
-#define DEG_TO_RAD M_PI/180.
-#define A_RES 2.0/32768.0
-#define G_RES 250.0/32768.0
-#define M_RES 1.501831501
-#define GYRO_SENS 130
-#define Pi 3.14159265359
+/* CAN1 init function */
+void MX_CAN1_Init(void)
+{
 
+  hcan1.Instance = CAN1;
+  hcan1.Init.Prescaler = 7;
+  hcan1.Init.Mode = CAN_MODE_NORMAL;
+  hcan1.Init.SJW = CAN_SJW_1TQ;
+  hcan1.Init.BS1 = CAN_BS1_6TQ;
+  hcan1.Init.BS2 = CAN_BS2_5TQ;
+  hcan1.Init.TTCM = DISABLE;
+  hcan1.Init.ABOM = DISABLE;
+  hcan1.Init.AWUM = DISABLE;
+  hcan1.Init.NART = DISABLE;
+  hcan1.Init.RFLM = DISABLE;
+  hcan1.Init.TXFP = DISABLE;
+  if (HAL_CAN_Init(&hcan1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
 
-struct {
-	float yaw, pitch, roll;
-} calc;
+}
 
+void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
+{
 
-char data[100];  	// Buffer for UART transmit
-int i; 				// Counter for UART transmit
+  GPIO_InitTypeDef GPIO_InitStruct;
+  if(canHandle->Instance==CAN1)
+  {
+  /* USER CODE BEGIN CAN1_MspInit 0 */
 
-/* USER CODE END Private defines */
+  /* USER CODE END CAN1_MspInit 0 */
+    /* CAN1 clock enable */
+    __HAL_RCC_CAN1_CLK_ENABLE();
+  
+    /**CAN1 GPIO Configuration    
+    PD0     ------> CAN1_RX
+    PD1     ------> CAN1_TX 
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-void _Error_Handler(char *, int);
+    /* CAN1 interrupt Init */
+    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+  /* USER CODE BEGIN CAN1_MspInit 1 */
 
-#define Error_Handler() _Error_Handler(__FILE__, __LINE__)
+  /* USER CODE END CAN1_MspInit 1 */
+  }
+}
+
+void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
+{
+
+  if(canHandle->Instance==CAN1)
+  {
+  /* USER CODE BEGIN CAN1_MspDeInit 0 */
+
+  /* USER CODE END CAN1_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_CAN1_CLK_DISABLE();
+  
+    /**CAN1 GPIO Configuration    
+    PD0     ------> CAN1_RX
+    PD1     ------> CAN1_TX 
+    */
+    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0|GPIO_PIN_1);
+
+    /* CAN1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+  /* USER CODE BEGIN CAN1_MspDeInit 1 */
+
+  /* USER CODE END CAN1_MspDeInit 1 */
+  }
+} 
+
+/* USER CODE BEGIN 1 */
+
+/* USER CODE END 1 */
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-*/ 
+  */
 
-#endif /* __MAIN_H */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

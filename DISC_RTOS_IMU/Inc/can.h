@@ -1,7 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : main.h
-  * Description        : This file contains the common defines of the application
+  * File Name          : CAN.h
+  * Description        : This file provides code for the configuration
+  *                      of the CAN instances.
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -46,56 +47,45 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_H
-#define __MAIN_H
-  /* Includes ------------------------------------------------------------------*/
+#ifndef __can_H
+#define __can_H
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
+#include "main.h"
 
 /* USER CODE BEGIN Includes */
-#include "stdio.h"
-#include <math.h>
-#include <string.h>
-#include "imu.h"
 
 /* USER CODE END Includes */
 
-/* Private define ------------------------------------------------------------*/
+extern CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN Private defines */
-#define A_RES 2.0/32768.0
-#define G_RES 250.0/32768.0
-#define M_RES 1.501831501
-
-#define GYRO_SENS 130
-#define RAD_TO_DEG 180./M_PI
-#define DEG_TO_RAD M_PI/180.
-#define A_RES 2.0/32768.0
-#define G_RES 250.0/32768.0
-#define M_RES 1.501831501
-#define GYRO_SENS 130
-#define Pi 3.14159265359
-
-
-struct {
-	float yaw, pitch, roll;
-} calc;
-
-
-char data[100];  	// Buffer for UART transmit
-int i; 				// Counter for UART transmit
 
 /* USER CODE END Private defines */
 
-void _Error_Handler(char *, int);
+extern void _Error_Handler(char *, int);
 
-#define Error_Handler() _Error_Handler(__FILE__, __LINE__)
+void MX_CAN1_Init(void);
+
+/* USER CODE BEGIN Prototypes */
+
+/* USER CODE END Prototypes */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /*__ can_H */
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-*/ 
+  */
 
-#endif /* __MAIN_H */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
