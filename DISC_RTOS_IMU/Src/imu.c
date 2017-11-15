@@ -60,49 +60,38 @@ void mpu9250Init(void)
 void mpu9250Data(void)
 {
 	uint8_t Buf[14];
-	float yaw, pitch, roll;
-	float Ax, Ay, Az, Gx, Gy, Gz;
+	int16_t raw_data[12] = {0};
+	float unit[12] = {0};
 
+	// Read the raw data block
 	HAL_I2C_Mem_Read(&hi2c1, (uint16_t)MPU9250_ADDRESS << 1, ACCEL_XOUT_H, 1, Buf, 14, 0xFFFF);
 
-	raw.ax = (int16_t)Buf[0]<<8 | Buf[1];
-	raw.ay = (int16_t)Buf[2]<<8 | Buf[3];
-	raw.az = (int16_t)Buf[4]<<8 | Buf[5];
+	// Create unit-vectors
+	for(int i = 0; i <= 12; i = i + 2)
+	{
+		raw_data[i] = Buf[i]<<8 | Buf[i+1];
+		unit[i] = (float)raw_data[i]  * A_RES;
 
-	raw.gx = (int16_t)Buf[8]<<8 | Buf[9];
-	raw.gy = (int16_t)Buf[10]<<8 | Buf[11];
-	raw.gz = (int16_t)Buf[12]<<8 | Buf[13];
+		if(i > 4)
+		{
+			unit[i] = (float)raw_data[i] * G_RES * DEG_TO_RAD;
+		}
+	}
 
-
-	Ax = (float)raw.ax * A_RES;
-	Ay = (float)raw.ay * A_RES;
-	Az = (float)raw.az * A_RES;
-
-	Gx = (float)raw.gx * G_RES * DEG_TO_RAD;
-	Gy = (float)raw.gy * G_RES * DEG_TO_RAD;
-	Gz = (float)raw.gz * G_RES * DEG_TO_RAD;
-
-	//	Send raw data to the filter
-	MadgwickAHRSupdateIMU(Gx, Gy, Gz, Ax, Ay, Az);
+	//	Send unit data to the filter
+	MadgwickAHRSupdateIMU(unit[8], unit[10], unit[12], unit[0], unit[2], unit[4]);
 
 	//	Calculate angles from quaternions
-	roll = atan2(2*(q0*q1+q2*q3), q3*q3-q2*q2-q1*q1+q0*q0);
-	pitch = asin(2.0f*(q1*q3-q0*q2));
-	yaw = atan2(2*(q0*q3+q1*q2), q1*q1+q0*q0-q3*q3-q2*q2);
+	calc.roll = RAD_TO_DEG * atan2(2*(q0*q1+q2*q3), q3*q3-q2*q2-q1*q1+q0*q0);
+	calc.pitch = RAD_TO_DEG * asin(2.0f*(q1*q3-q0*q2));
+	calc.yaw = RAD_TO_DEG * atan2(2*(q0*q3+q1*q2), q1*q1+q0*q0-q3*q3-q2*q2);
 
-	//	Translation of angles from radians to degrees
-	yaw = RAD_TO_DEG * yaw;
-	pitch = RAD_TO_DEG * pitch;
-	roll = RAD_TO_DEG * roll;
-
-
+	// Send every 100`s data to UART
 	if(i == 10)
 	{
-		sprintf(data, "Pitch: %0.1f,\t Roll: %0.1f,\t Yaw: %0.1f\t\r\n", pitch, roll, yaw);
+		sprintf(data, "Pitch: %0.1f,\t Roll: %0.1f,\t Yaw: %0.1f\t\r\n", calc.pitch, calc.roll, calc.yaw);
 		CDC_Transmit_FS((uint8_t*)data, strlen(data));
 		i = 0;
 	}
 	i++;
-
-
 }
