@@ -75,7 +75,6 @@
 
 struct {
 	float yaw, pitch, roll;
-	float ax, ay, az, gx, gy, gz;
 } calc;
 
 
