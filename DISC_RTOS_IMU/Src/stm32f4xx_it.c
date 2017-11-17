@@ -39,11 +39,16 @@
 /* USER CODE BEGIN 0 */
 #include "imu.h"
 #include "gpio.h"
+#include "usbd_cdc_if.h"
+
+uint16_t counter;
+
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern CAN_HandleTypeDef hcan1;
+extern TIM_HandleTypeDef htim7;
 
 /******************************************************************************/
 /*            Cortex-M4 Processor Interruption and Exception Handlers         */ 
@@ -172,6 +177,7 @@ void EXTI1_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
   mpu9250Data();
+//  counter++;
   /* USER CODE END EXTI1_IRQn 1 */
 }
 
@@ -187,6 +193,21 @@ void CAN1_RX0_IRQHandler(void)
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
+}
+
+/**
+* @brief This function handles TIM7 global interrupt.
+*/
+void TIM7_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM7_IRQn 0 */
+  /* USER CODE END TIM7_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim7);
+  /* USER CODE BEGIN TIM7_IRQn 1 */
+//  sprintf(data, "Freq: %dHz\r\n", counter);
+//  CDC_Transmit_FS((uint8_t*)data, strlen(data));
+//  counter = 0;
+  /* USER CODE END TIM7_IRQn 1 */
 }
 
 /**

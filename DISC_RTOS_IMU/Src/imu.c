@@ -4,24 +4,17 @@
 #include "main.h"
 #include "MadgwickAHRS.h"
 #include "i2c.h"
+#include "usbd_cdc.h"
 
 void mpu9250Init(void)
 {
-	printf("Search connected I2C Devices...\r\n");
-	printf(" \r\n");
-
 	/* Check mpu9250 */
 	if (i2c_ReadByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250) == 0x73)
 	{
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
 		HAL_Delay(100);
-		printf("Found mpu9255, check = OK!...\r\n");
 	}
-	else {
-		printf("No founded devices!...\r\n");
-		printf("Found = %d \r\n", i2c_ReadByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250));
-	}
-	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+	else Error_Handler();
 
 	/* Set accelerometers low pass filter at 5Hz */
 	i2c_WriteByte(MPU9250_ADDRESS, ACCEL_CONFIG2, 0x06);
@@ -39,7 +32,8 @@ void mpu9250Init(void)
 	i2c_WriteByte(MPU9250_ADDRESS, CONFIG, 3<<DLPF_CFG_bit);
 	HAL_Delay(10);
 
-	/* Set by pass mode for the magnetometers */
+/*
+	// Set by pass mode for the magnetometers
 	i2c_WriteByte(MPU9250_ADDRESS, INT_PIN_CFG, 0x02);
 	HAL_Delay(10);
 
@@ -49,10 +43,10 @@ void mpu9250Init(void)
 	i2c_WriteByte(AK8963_ADDRESS, AK8963_CNTL, 0x0F); // Enter Fuse ROM access mode
 	HAL_Delay(10);
 
-	/* Request continuous magnetometer measurements in 16 bits */
+	// Request continuous magnetometer measurements in 16 bits
 	i2c_WriteByte(AK8963_ADDRESS, AK8963_CNTL, 0x16);
 	HAL_Delay(10);
-
+*/
 	/* Setup INT pin for Interrupts */
 	i2c_WriteByte(MPU9250_ADDRESS, INT_ENABLE, DATA_RDY_EN);
 }
@@ -86,12 +80,14 @@ void mpu9250Data(void)
 	calc.pitch = RAD_TO_DEG * asin(2.0f*(q1*q3-q0*q2));
 	calc.yaw = RAD_TO_DEG * atan2(2*(q0*q3+q1*q2), q1*q1+q0*q0-q3*q3-q2*q2);
 
+
 	// Send every 100`s data to UART
 	if(i == 10)
 	{
 		sprintf(data, "Pitch: %0.1f,\t Roll: %0.1f,\t Yaw: %0.1f\t\r\n", calc.pitch, calc.roll, calc.yaw);
-		CDC_Transmit_FS((uint8_t*)data, strlen(data));
+		CDC_Transmit_FS((uint8_t*)&data, (uint16_t) strlen(data));
 		i = 0;
 	}
 	i++;
+
 }
