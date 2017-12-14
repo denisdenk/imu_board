@@ -79,7 +79,6 @@ struct {
 	float yaw, pitch, roll;
 } calc;
 
-
 char data[100];  	// Buffer for UART transmit
 int i; 				// Counter for UART transmit
 

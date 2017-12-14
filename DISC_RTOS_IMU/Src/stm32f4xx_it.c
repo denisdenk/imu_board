@@ -37,10 +37,14 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN 0 */
+#include "main.h"
+#include "i2c.h"
 #include "imu.h"
 #include "gpio.h"
 #include "usbd_cdc_if.h"
+#include "mpu9250_register_map.h"
 
+osThreadId readMPU9250TskHandle;
 uint16_t counter;
 
 /* USER CODE END 0 */
@@ -48,6 +52,7 @@ uint16_t counter;
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern CAN_HandleTypeDef hcan1;
+extern DMA_HandleTypeDef hdma_i2c1_rx;
 extern TIM_HandleTypeDef htim7;
 
 /******************************************************************************/
@@ -167,18 +172,54 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+* @brief This function handles EXTI line0 interrupt.
+*/
+void EXTI0_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+  sprintf(data, "Blue button pressed!\r\n");
+  CDC_Transmit_FS((uint8_t*)data, strlen(data));
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
 * @brief This function handles EXTI line1 interrupt.
 */
 void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
-
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
-  mpu9250Data();
-//  counter++;
+
+//	counter++;
+	xTaskResumeFromISR(readMPU9250TskHandle);
+	portEND_SWITCHING_ISR(pdTRUE);
+
   /* USER CODE END EXTI1_IRQn 1 */
+}
+
+/**
+* @brief This function handles DMA1 stream0 global interrupt.
+*/
+void DMA1_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_i2c1_rx);
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
+
+	counter++;
+	//	xTaskResumeFromISR(readMPU9250TskHandle);
+	//	portEND_SWITCHING_ISR(pdTRUE);
+
+  /* USER CODE END DMA1_Stream0_IRQn 1 */
 }
 
 /**
@@ -204,9 +245,9 @@ void TIM7_IRQHandler(void)
   /* USER CODE END TIM7_IRQn 0 */
   HAL_TIM_IRQHandler(&htim7);
   /* USER CODE BEGIN TIM7_IRQn 1 */
-//  sprintf(data, "Freq: %dHz\r\n", counter);
-//  CDC_Transmit_FS((uint8_t*)data, strlen(data));
-//  counter = 0;
+//	sprintf(data, "Freq: %dHz\r\n", counter);
+//	CDC_Transmit_FS((uint8_t*)data, strlen(data));
+//	counter = 0;
   /* USER CODE END TIM7_IRQn 1 */
 }
 

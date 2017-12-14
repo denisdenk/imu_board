@@ -54,23 +54,29 @@
 /* USER CODE BEGIN Includes */     
 #include "main.h"
 #include "gpio.h"
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
-osThreadId defaultTaskHandle;
+osThreadId defaultTskHandle;
+osThreadId readMPU9250TskHandle;
+osThreadId transmitDataTskHandle;
+osSemaphoreId ISRFromMPU9250Handle;
 
 /* USER CODE BEGIN Variables */
-osThreadId transmitDataHandle;
+
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
 void StartDefaultTask(void const * argument);
+void StartReadingMPU9250Task(void const * argument);
+void StartTransmitDataTask(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
-void TransmitDataTask(void const * argument);
+
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
@@ -86,6 +92,11 @@ void MX_FREERTOS_Init(void) {
 	/* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
+  /* Create the semaphores(s) */
+  /* definition and creation of ISRFromMPU9250 */
+  osSemaphoreDef(ISRFromMPU9250);
+  ISRFromMPU9250Handle = osSemaphoreCreate(osSemaphore(ISRFromMPU9250), 10);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -95,14 +106,20 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* definition and creation of defaultTsk */
+  osThreadDef(defaultTsk, StartDefaultTask, osPriorityNormal, 0, 128);
+  defaultTskHandle = osThreadCreate(osThread(defaultTsk), NULL);
+
+  /* definition and creation of readMPU9250Tsk */
+  osThreadDef(readMPU9250Tsk, StartReadingMPU9250Task, osPriorityAboveNormal, 0, 512);
+  readMPU9250TskHandle = osThreadCreate(osThread(readMPU9250Tsk), NULL);
+
+  /* definition and creation of transmitDataTsk */
+  osThreadDef(transmitDataTsk, StartTransmitDataTask, osPriorityNormal, 0, 128);
+  transmitDataTskHandle = osThreadCreate(osThread(transmitDataTsk), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-	osThreadDef(transmitDataTask, TransmitDataTask, osPriorityNormal, 0, 128);
-	transmitDataHandle = osThreadCreate(osThread(transmitDataTask), NULL);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -115,26 +132,49 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+ // MX_USB_DEVICE_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
 	/* Infinite loop */
 	for(;;)
 	{
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
-		osDelay(1000);
+		osDelay(200);
 	}
+
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Application */
-void TransmitDataTask(void const * argument)
+/* StartReadingMPU9250Task function */
+void StartReadingMPU9250Task(void const * argument)
 {
+  /* USER CODE BEGIN StartReadingMPU9250Task */
+	/* Infinite loop */
 	for(;;)
 	{
-		osDelay(100);
+		vTaskSuspend(readMPU9250TskHandle);
+		mpu9250Data();
+		osDelay(1);
 	}
+
+  /* USER CODE END StartReadingMPU9250Task */
 }
+
+/* StartTransmitDataTask function */
+void StartTransmitDataTask(void const * argument)
+{
+  /* USER CODE BEGIN StartTransmitDataTask */
+	/* Infinite loop */
+	for(;;)
+	{
+		osDelay(1);
+	}
+
+  /* USER CODE END StartTransmitDataTask */
+}
+
+/* USER CODE BEGIN Application */
+
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

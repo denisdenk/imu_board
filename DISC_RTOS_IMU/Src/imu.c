@@ -11,8 +11,13 @@ void mpu9250Init(void)
 	/* Check mpu9250 */
 	if (i2c_ReadByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250) == 0x73)
 	{
-		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-		HAL_Delay(100);
+		for(int i; i<10; i++)
+		{
+			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+			HAL_Delay(100);
+		}
+		sprintf(data, "MPU9255 Init OK\r\n");
+		CDC_Transmit_FS((uint8_t*)data, (uint16_t) strlen(data));
 	}
 	else Error_Handler();
 
@@ -32,7 +37,11 @@ void mpu9250Init(void)
 	i2c_WriteByte(MPU9250_ADDRESS, CONFIG, 3<<DLPF_CFG_bit);
 	HAL_Delay(10);
 
-/*
+	/*Output Freq = InternalFreq / (1+SMPLRT_DIV) == 1000 / 10 = 100Hz*/
+//	i2c_WriteByte(MPU9250_ADDRESS, SMPLRT_DIV, 0x04);
+//	HAL_Delay(10);
+
+	/*
 	// Set by pass mode for the magnetometers
 	i2c_WriteByte(MPU9250_ADDRESS, INT_PIN_CFG, 0x02);
 	HAL_Delay(10);
@@ -46,14 +55,14 @@ void mpu9250Init(void)
 	// Request continuous magnetometer measurements in 16 bits
 	i2c_WriteByte(AK8963_ADDRESS, AK8963_CNTL, 0x16);
 	HAL_Delay(10);
-*/
+	 */
 	/* Setup INT pin for Interrupts */
 	i2c_WriteByte(MPU9250_ADDRESS, INT_ENABLE, DATA_RDY_EN);
 }
 
 void mpu9250Data(void)
 {
-	uint8_t Buf[14];
+	uint8_t Buf[14] = {0};
 	int16_t raw_data[12] = {0};
 	float unit[12] = {0};
 
@@ -81,13 +90,13 @@ void mpu9250Data(void)
 	calc.yaw = RAD_TO_DEG * atan2(2*(q0*q3+q1*q2), q1*q1+q0*q0-q3*q3-q2*q2);
 
 
+//	uint8_t count = 0;
 	// Send every 100`s data to UART
-	if(i == 10)
-	{
+//	if(count == 10)
+//	{
 		sprintf(data, "Pitch: %0.1f,\t Roll: %0.1f,\t Yaw: %0.1f\t\r\n", calc.pitch, calc.roll, calc.yaw);
-		CDC_Transmit_FS((uint8_t*)&data, (uint16_t) strlen(data));
-		i = 0;
-	}
-	i++;
-
+		CDC_Transmit_FS((uint8_t*)data, (uint16_t) strlen(data));
+//		count = 0;
+//	}
+//	count++;
 }

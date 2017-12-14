@@ -50,6 +50,7 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "can.h"
+#include "dma.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usb_device.h"
@@ -104,11 +105,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
 //  MX_CAN1_Init();
   MX_TIM7_Init();
 
   /* USER CODE BEGIN 2 */
+  MX_USB_DEVICE_Init();
   HAL_TIM_Base_Start_IT(&htim7);
   mpu9250Init();
   /* USER CODE END 2 */
@@ -204,6 +207,7 @@ void _Error_Handler(char * file, int line)
 	/* User can add his own implementation to report the HAL error return state */
 	while(1)
 	{
+		// Blinking RED Led
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
 		HAL_Delay(50);
 	}
